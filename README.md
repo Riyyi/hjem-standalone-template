@@ -16,7 +16,7 @@ system-manager.allowAnyDistro = true;
 # Import the regular Hjem NixOS module
 modules = [ inputs.hjem.nixosModules.default ];
 
-# Custom module; Linker wrapper and systemd tweaks required for this setup
+# Custom module; system-manager compatibility tweaks for Hjem's NixOS module
 modules = [ self.modules.system-manager.hjem-system-manager ];
 
 ```

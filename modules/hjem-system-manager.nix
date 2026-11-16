@@ -1,36 +1,6 @@
-{ inputs, ... }:
 {
-  flake.modules.system-manager.hjem-system-manager = { lib, pkgs, config, ... }:
+  flake.modules.system-manager.hjem-system-manager = { lib, config, ... }:
     let
-      hjemPkg = inputs.hjem.packages.${pkgs.stdenv.hostPlatform.system}.hjem;
-
-      hjemLinker = pkgs.writeShellScriptBin "hjem-linker" ''
-        set -e
-        cmd="$1"
-        new_manifest="$2"
-
-        user=$(basename "$new_manifest" | sed 's/^manifest-\(.*\)\.json$/\1/')
-        state="/var/lib/hjem/manifest-$user.json"
-
-        case "$cmd" in
-          activate|diff)
-            # Mirror the original NixOS module: use hjem's built-in linker
-            # (via `internal activate`) and let hjem-update-state@ write the
-            # state file as root later.
-            exec ${hjemPkg}/bin/hjem internal activate \
-              --skip-state-update \
-              --manifest "$new_manifest" \
-              --state "$state" \
-              --prefix ".backup-" \
-              --json
-            ;;
-          *)
-            echo "hjem-linker: unknown command '$cmd'" >&2
-            exit 1
-            ;;
-        esac
-      '';
-
       enabledUsers = lib.filterAttrs (_: cfg: cfg.enable) config.hjem.users;
       userNames = lib.attrNames enabledUsers;
     in
@@ -50,11 +20,6 @@
       };
 
       config = {
-        # Hjem's NixOS module expects an external linker that speaks the
-        # positional "activate" / "diff" protocol. Wrap the hjem CLI so it
-        # accepts that protocol and forwards to `hjem internal activate`.
-        hjem.linker = lib.mkForce hjemLinker;
-
         # system-manager cannot reload bare template units (it needs an
         # instance like hjem-activate@myuser). Suppress the cosmetic reload
         # errors by telling system-manager not to restart them directly.
